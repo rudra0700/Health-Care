@@ -43,7 +43,7 @@ const PublicNavbar = () => {
             <SheetTrigger asChild>
               <Button variant="outline"> <Menu/> </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px] p-4">
+            <SheetContent side="right" className="w-75 sm:w-100 p-4">
               <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
               <nav className="flex flex-col space-y-4 mt-8">
                 {navItems.map((link) => (
