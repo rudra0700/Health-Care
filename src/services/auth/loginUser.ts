@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
-import z from "zod";
 import { parse } from "cookie";
 import { redirect } from "next/navigation";
 import jwt, { JwtPayload } from "jsonwebtoken";
@@ -11,20 +10,10 @@ import {
   UserRole,
 } from "@/lib/auth-utills";
 import { setCookie } from "./tokenHandler";
+import { zodValidator } from "@/lib/zodValidator";
+import { loginValidationZodSchema } from "@/zod/auth.validation";
 
-const loginValidationZodSchema = z.object({
-  email: z.email({
-    message: "Email is required",
-  }),
-  password: z
-    .string("Password is required")
-    .min(6, {
-      error: "Password is required and must be at least 6 characters long",
-    })
-    .max(100, {
-      error: "Password must be at most 100 characters long",
-    }),
-});
+
 
 export const loginUser = async (
   _currentState: any,
@@ -35,28 +24,20 @@ export const loginUser = async (
     let accessTokenObject: null | any = null;
     let refreshTokenObject: null | any = null;
 
-    const loginData = {
+    const payload = {
       email: formData.get("email"),
       password: formData.get("password"),
     };
 
-    const validatedFields = loginValidationZodSchema.safeParse(loginData);
-
-    if (!validatedFields.success) {
-      return {
-        success: false,
-        errors: validatedFields.error.issues.map((issue) => {
-          return {
-            field: issue.path[0],
-            message: issue.message,
-          };
-        }),
-      };
+    if (zodValidator(payload, loginValidationZodSchema).success === false) {
+      return zodValidator(payload, loginValidationZodSchema);
     }
+
+    const validatedPayload = zodValidator(payload, loginValidationZodSchema).data;
 
     const res = await fetch("http://localhost:5000/api/v1/auth/login", {
       method: "POST",
-      body: JSON.stringify(loginData),
+      body: JSON.stringify(validatedPayload),
       headers: {
         "Content-Type": "application/json",
       },
