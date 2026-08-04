@@ -23,11 +23,24 @@ const DoctorsManagementHeader = ({
       router.refresh();
     });
   };
+
+  
+  const [dialogKey, setDialogKey] = useState(0);
+
+  const handleOpenDialog = () => {
+    setDialogKey((prev) => prev + 1); // Force remount
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+  };
   return (
     <>
       <DoctorFormDialogue
+        key={dialogKey} // Use the dialogKey to force remount
         open={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
+        onClose={handleCloseDialog}
         onSuccess={handleSuccess}
         specialities={specialities}
       />
@@ -38,7 +51,7 @@ const DoctorsManagementHeader = ({
         action={{
           label: "Add Doctor    ",
           icon: Plus,
-          onClick: () => setIsDialogOpen(true),
+          onClick: handleOpenDialog,
         }}
       />
     </>
