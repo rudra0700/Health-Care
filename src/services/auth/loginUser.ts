@@ -6,14 +6,12 @@ import { redirect } from "next/navigation";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import {
   getDefaultDashboardRoute,
-  isValidRouterForRole,
+  isValidRedirectForRole,
   UserRole,
 } from "@/lib/auth-utills";
 import { setCookie } from "./tokenHandler";
 import { zodValidator } from "@/lib/zodValidator";
 import { loginValidationZodSchema } from "@/zod/auth.validation";
-
-
 
 export const loginUser = async (
   _currentState: any,
@@ -33,7 +31,10 @@ export const loginUser = async (
       return zodValidator(payload, loginValidationZodSchema);
     }
 
-    const validatedPayload = zodValidator(payload, loginValidationZodSchema).data;
+    const validatedPayload = zodValidator(
+      payload,
+      loginValidationZodSchema,
+    ).data;
 
     const res = await fetch("http://localhost:5000/api/v1/auth/login", {
       method: "POST",
@@ -42,6 +43,8 @@ export const loginUser = async (
         "Content-Type": "application/json",
       },
     });
+
+    const result = await res.json();
 
     const setCookieHeaders = res.headers.getSetCookie();
 
@@ -97,15 +100,32 @@ export const loginUser = async (
 
     const userRole = verifyToken.role as UserRole;
 
+    if (!result.success) {
+      throw new Error(result.message || "Login failed");
+    }
+
+    if (redirectTo && result.data.needPasswordChange) {
+      const requestedPath = redirectTo.toString();
+      if (isValidRedirectForRole(requestedPath, userRole)) {
+        redirect(`/reset-password?redirect=${requestedPath}`);
+      } else {
+        redirect("/reset-password");
+      }
+    }
+
+    if (result.data.needPasswordChange) {
+      redirect("/reset-password");
+    }
+
     if (redirectTo) {
       const requestedPath = redirectTo.toString();
-      if (isValidRouterForRole(requestedPath, userRole)) {
-        redirect(requestedPath);
+      if (isValidRedirectForRole(requestedPath, userRole)) {
+        redirect(`${requestedPath}?loggedIn=true`);
       } else {
-        redirect(getDefaultDashboardRoute(userRole));
+        redirect(`${getDefaultDashboardRoute(userRole)}?loggedIn=true`);
       }
     } else {
-      redirect(getDefaultDashboardRoute(userRole));
+      redirect(`${getDefaultDashboardRoute(userRole)}?loggedIn=true`);
     }
   } catch (error: any) {
     if (error?.digest?.startsWith("NEXT_REDIRECT")) {

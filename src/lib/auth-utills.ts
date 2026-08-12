@@ -5,15 +5,10 @@ export type RouteConfig = {
   patterns: RegExp[];
 };
 
-export const authRoutes = [
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
-];
+export const authRoutes = ["/login", "/register", "/forgot-password"];
 
 export const commontProtectedRoutes: RouteConfig = {
-  exact: ["/my-profile", "/change-password"],
+  exact: ["/my-profile", "/change-password", "/reset-password"],
   patterns: [],
 };
 
@@ -80,6 +75,23 @@ export const isValidRouterForRole = (
   role: UserRole,
 ): boolean => {
   const routeOwner = getRouteOwner(pathname);
+
+  if (routeOwner === null || routeOwner === "COMMON") {
+    return true;
+  }
+
+  if (routeOwner === role) {
+    return true;
+  }
+
+  return false;
+};
+
+export const isValidRedirectForRole = (
+  redirectPath: string,
+  role: UserRole,
+): boolean => {
+  const routeOwner = getRouteOwner(redirectPath);
 
   if (routeOwner === null || routeOwner === "COMMON") {
     return true;
