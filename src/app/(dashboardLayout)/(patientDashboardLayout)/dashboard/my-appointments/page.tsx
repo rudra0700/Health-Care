@@ -1,11 +1,21 @@
+import AppointmentsList from "@/components/modules/Patient/PatientAppointment/AppointmentList";
+import { getMyAppointments } from "@/services/patient/appointment.services";
+import { IAppointment } from "@/types/appointment.interface";
 
+export default async function MyAppointmentsPage() {
+  const response = await getMyAppointments();
+  const appointments: IAppointment[] = response?.data || [];
 
-const MyAppointmentPage = () => {
-    return (
-        <div>
-            From  my appointment page
-        </div>
-    );
-};
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">My Appointments</h1>
+        <p className="text-muted-foreground mt-2">
+          View and manage your scheduled appointments
+        </p>
+      </div>
 
-export default MyAppointmentPage;
+      <AppointmentsList appointments={appointments} />
+    </div>
+  );
+}
