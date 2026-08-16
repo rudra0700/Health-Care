@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Column } from "@/components/shared/ManagementTable";
 import { Badge } from "@/components/ui/badge";
-import { AppointmentStatus, IAppointment } from "@/types/appointment.interface";
-
 import { format } from "date-fns";
+import AppointmentCountdown from "../../Patient/PatientAppointment/AppointmentCountdown";
+import { AppointmentStatus, IAppointment } from "@/types/appointment.interface";
 
 const statusConfig: Record<
   AppointmentStatus,
@@ -48,7 +48,7 @@ export const doctorAppointmentColumns: Column<IAppointment>[] = [
     accessor: (appointment) => {
       if (!appointment.schedule?.startDateTime) return "N/A";
       return (
-        <div className="text-sm">
+        <div className="text-sm space-y-1">
           <p className="font-medium">
             {format(
               new Date(appointment.schedule.startDateTime),
@@ -59,6 +59,15 @@ export const doctorAppointmentColumns: Column<IAppointment>[] = [
             {format(new Date(appointment.schedule.startDateTime), "h:mm a")} -{" "}
             {format(new Date(appointment.schedule.endDateTime), "h:mm a")}
           </p>
+          {appointment.status === AppointmentStatus.SCHEDULED &&
+            appointment.schedule.startDateTime && (
+              <div className="pt-1">
+                <AppointmentCountdown
+                  appointmentDateTime={appointment.schedule.startDateTime}
+                  className="text-xs"
+                />
+              </div>
+            )}
         </div>
       );
     },

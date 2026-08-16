@@ -20,7 +20,7 @@ interface IPatientFormDialogProps {
   patient?: IPatient;
 }
 
-const PatientFormDialogue = ({
+const PatientFormDialog = ({
   open,
   onClose,
   onSuccess,
@@ -32,9 +32,12 @@ const PatientFormDialogue = ({
     updatePatient.bind(null, patient?.id as string),
     null
   );
+  const prevStateRef = useRef(state);
 
   // Handle success/error from server
   useEffect(() => {
+    if (state === prevStateRef.current) return;
+    prevStateRef.current = state;
     if (state?.success) {
       toast.success(state.message || "Operation successful");
       if (formRef.current) {
@@ -137,4 +140,4 @@ const PatientFormDialogue = ({
   );
 };
 
-export default PatientFormDialogue;
+export default PatientFormDialog;

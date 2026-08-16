@@ -15,12 +15,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useSpecialitySelection } from "@/hooks/useSpecialitySelection";
 import { createDoctor, updateDoctor } from "@/services/admin/doctorManagement";
 import { IDoctor } from "@/types/doctor.interface";
 import { ISpecialty } from "@/types/specialities.interface";
+import Image from "next/image";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useSpecialitySelection } from "@/hooks/useSpecialitySelection";
 import SpecialityMultiSelect from "./SpecialityMultiSelect";
 
 interface IDoctorFormDialogProps {
@@ -43,13 +44,33 @@ const DoctorFormDialog = ({
   const isEdit = !!doctor;
 
   const [gender, setGender] = useState<"MALE" | "FEMALE">(
-    doctor?.gender || "MALE",
+    doctor?.gender || "MALE"
   );
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setSelectedFile(file || null);
+  };
 
   const [state, formAction, pending] = useActionState(
     isEdit ? updateDoctor.bind(null, doctor.id!) : createDoctor,
-    null,
+    null
   );
+
+  const prevStateRef = useRef(state);
+
+  const handleClose = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    if (selectedFile) {
+      setSelectedFile(null); // Clear preview
+    }
+    formRef.current?.reset(); // Clear form
+    onClose(); // Close dialog
+  };
 
   const specialtySelection = useSpecialitySelection({
     doctor,
@@ -62,6 +83,9 @@ const DoctorFormDialog = ({
   };
 
   useEffect(() => {
+    if (state === prevStateRef.current) return;
+    prevStateRef.current = state;
+
     if (state?.success) {
       toast.success(state.message);
       if (formRef.current) {
@@ -69,13 +93,19 @@ const DoctorFormDialog = ({
       }
       onSuccess();
       onClose();
-    } else if (state && !state.success) {
+    } else if (state && !state.success && state.message) {
       toast.error(state.message);
+
+      if (selectedFile && fileInputRef.current) {
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(selectedFile);
+        fileInputRef.current.files = dataTransfer.files;
+      }
     }
-  }, [state, onSuccess, onClose]);
+  }, [state, onSuccess, onClose, selectedFile]);
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle>{isEdit ? "Edit Doctor" : "Add New Doctor"}</DialogTitle>
@@ -93,7 +123,6 @@ const DoctorFormDialog = ({
                 id="name"
                 name="name"
                 placeholder="Dr. John Doe"
-                // defaultValue={isEdit ? doctor?.name : undefined}
                 defaultValue={
                   state?.formData?.name || (isEdit ? doctor?.name : "")
                 }
@@ -125,8 +154,8 @@ const DoctorFormDialog = ({
                     id="password"
                     name="password"
                     type="password"
-                    placeholder="Enter password"
                     defaultValue={state?.formData?.password || ""}
+                    placeholder="Enter password"
                   />
                   <InputFieldError state={state} field="password" />
                 </Field>
@@ -146,48 +175,6 @@ const DoctorFormDialog = ({
                 </Field>
               </>
             )}
-            {/* 
-            <Field>
-              <FieldLabel htmlFor="specialities">Speciality</FieldLabel>
-              <Input
-                id="specialities"
-                name="specialities"
-                placeholder="Select a speciality"
-                // defaultValue={isEdit ? doctor?.doctorSpecialties?.[0]?.specialties?.title : ""}
-                defaultValue={selectedSpeciality}
-                type="hidden"
-              />
-              <Select
-                value={
-                  //   isEdit
-                  //     ? doctor?.doctorSpecialties?.[0]?.specialties?.title || ""
-                  //     : selectedSpeciality
-                  selectedSpeciality
-                }
-                onValueChange={setSelectedSpeciality}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a speciality" />
-                </SelectTrigger>
-                <SelectContent>
-                  {specialities && specialities.length > 0 ? (
-                    specialities.map((speciality) => (
-                      <SelectItem key={speciality.id} value={speciality.title}>
-                        {speciality.title}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="none" disabled>
-                      No specialities available
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-gray-500 mt-1">
-                Select a speciality for the doctor
-              </p>
-              <InputFieldError state={state} field="specialities" />
-            </Field> */}
 
             {/* Specialty Selection */}
             <SpecialityMultiSelect
@@ -195,7 +182,7 @@ const DoctorFormDialog = ({
               removedSpecialtyIds={specialtySelection.removedSpecialtyIds}
               currentSpecialtyId={specialtySelection.currentSpecialtyId}
               availableSpecialties={specialtySelection.getAvailableSpecialties(
-                specialities!,
+                specialities!
               )}
               isEdit={isEdit}
               onCurrentSpecialtyChange={
@@ -206,6 +193,7 @@ const DoctorFormDialog = ({
               getSpecialtyTitle={getSpecialtyTitle}
               getNewSpecialties={specialtySelection.getNewSpecialties}
             />
+            <InputFieldError field="specialties" state={state} />
 
             <Field>
               <FieldLabel htmlFor="contactNumber">Contact Number</FieldLabel>
@@ -279,6 +267,9 @@ const DoctorFormDialog = ({
                 name="gender"
                 placeholder="Select gender"
                 defaultValue={gender}
+                // defaultValue={
+                //   state?.formData?.gender || (isEdit ? doctor?.gender : "")
+                // }
                 type="hidden"
               />
               <Select
@@ -359,12 +350,27 @@ const DoctorFormDialog = ({
             {!isEdit && (
               <Field>
                 <FieldLabel htmlFor="file">Profile Photo</FieldLabel>
+                {selectedFile && (
+                  <Image
+                    //get from state if available
+                    src={
+                      typeof selectedFile === "string"
+                        ? selectedFile
+                        : URL.createObjectURL(selectedFile)
+                    }
+                    alt="Profile Photo Preview"
+                    width={50}
+                    height={50}
+                    className="mb-2 rounded-full"
+                  />
+                )}
                 <Input
                   ref={fileInputRef}
                   id="file"
                   name="file"
                   type="file"
                   accept="image/*"
+                  onChange={handleFileChange}
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Upload a profile photo for the doctor
@@ -387,8 +393,8 @@ const DoctorFormDialog = ({
               {pending
                 ? "Saving..."
                 : isEdit
-                  ? "Update Doctor"
-                  : "Create Doctor"}
+                ? "Update Doctor"
+                : "Create Doctor"}
             </Button>
           </div>
         </form>
