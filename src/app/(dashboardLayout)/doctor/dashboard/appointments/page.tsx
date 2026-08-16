@@ -2,6 +2,7 @@
 
 // import DoctorAppointmentsTable from "@/components/modules/Doctor/DoctorAppointments/DoctorAppointmentTable";
 import DoctorAppointmentsTable from "@/components/modules/Doctor/DoctorAppointments/DoctorAppointmentTable";
+import { TableSkeleton } from "@/components/shared/TableSkeleton";
 import { getMyAppointments } from "@/services/patient/appointment.services";
 import { IAppointment } from "@/types/appointment.interface";
 
@@ -24,7 +25,7 @@ export default async function DoctorAppointmentsPage() {
         </p>
       </div>
 
-      <Suspense fallback={<div>Loading appointments...</div>}>
+      <Suspense fallback={<TableSkeleton columns={8} rows={10} />}>
         <AppointmentsContent />
       </Suspense>
     </div>

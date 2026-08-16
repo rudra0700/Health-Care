@@ -11,13 +11,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createPrescription } from "@/services/patient/prescription.services";
-import { IAppointment } from "@/types/appointment.interface";
-
 import { format } from "date-fns";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import AppointmentCountdown from "../../Patient/PatientAppointment/AppointmentCountdown";
+import { IAppointment } from "@/types/appointment.interface";
+import { createPrescription } from "@/services/patient/prescription.services";
 
 interface DoctorAppointmentDetailDialogProps {
   appointment: IAppointment | null;
@@ -30,7 +30,7 @@ export default function DoctorAppointmentDetailDialog({
   open,
   onClose,
 }: DoctorAppointmentDetailDialogProps) {
-  const router = useRouter();
+  // const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [instructions, setInstructions] = useState("");
   const [followUpDate, setFollowUpDate] = useState("");
@@ -80,15 +80,17 @@ export default function DoctorAppointmentDetailDialog({
         toast.success("Prescription created successfully");
         setInstructions("");
         setFollowUpDate("");
-        onClose();
-        router.refresh();
+        // Close dialog first, then refresh will update the data
+        setTimeout(() => {
+          onClose();
+        }, 100);
       } else {
         toast.error(result.message || "Failed to create prescription");
+        setIsSubmitting(false);
       }
     } catch (error) {
       console.error("Error creating prescription:", error);
       toast.error("An error occurred while creating prescription");
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -97,7 +99,6 @@ export default function DoctorAppointmentDetailDialog({
     setInstructions("");
     setFollowUpDate("");
     onClose();
-    router.refresh();
   };
 
   return (
@@ -158,6 +159,16 @@ export default function DoctorAppointmentDetailDialog({
                     : "N/A"}
                 </p>
               </div>
+              {status === "SCHEDULED" && schedule?.startDateTime && (
+                <div className="col-span-2 pt-2 border-t">
+                  <p className="text-muted-foreground mb-2">
+                    Time Until Appointment
+                  </p>
+                  <AppointmentCountdown
+                    appointmentDateTime={schedule.startDateTime}
+                  />
+                </div>
+              )}
               <div>
                 <p className="text-muted-foreground">Status</p>
                 <div>

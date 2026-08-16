@@ -21,7 +21,7 @@ interface IAdminFormDialogProps {
   admin?: IAdmin;
 }
 
-const AdminFormDialogue = ({
+const AdminFormDialog = ({
   open,
   onClose,
   onSuccess,
@@ -37,6 +37,7 @@ const AdminFormDialogue = ({
     null
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const prevStateRef = useRef(state);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -45,6 +46,8 @@ const AdminFormDialogue = ({
 
   // Handle success/error from server
   useEffect(() => {
+    if (state === prevStateRef.current) return;
+    prevStateRef.current = state;
     if (state?.success) {
       toast.success(state.message || "Operation successful");
       if (formRef.current) {
@@ -192,4 +195,4 @@ const AdminFormDialogue = ({
   );
 };
 
-export default AdminFormDialogue;
+export default AdminFormDialog;
